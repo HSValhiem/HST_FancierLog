@@ -157,7 +157,7 @@ class HS_FancierLog
 
         // Wait if Valheim not Started
         LogMessage("Valheim not Detected\nWaiting for Valheim to start...");
-        while (!IsValheimRunning()) { Thread.Sleep(300); }
+        while (!IsValheimRunning()) { Thread.Sleep(1); }
 
         // Continuously display the log file with color
         using (var stream = new FileStream(LogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -172,7 +172,7 @@ class HS_FancierLog
                 {
                     LogMessage("Valheim Close Detected.  Clearing Log.\nWaiting for Valheim to start...");
                     File.WriteAllText(LogPath, string.Empty);
-                    while (!IsValheimRunning()) { Thread.Sleep(300); }
+                    while (!IsValheimRunning()) { Thread.Sleep(1); }
                 }
 
                 // Check if the file size has changed
@@ -250,7 +250,7 @@ class HS_FancierLog
                 currentPosition = stream.Position;
 
                 // Wait for a second before reading the file again
-                System.Threading.Thread.Sleep(100);
+                System.Threading.Thread.Sleep(1);
             }
         }
     }
