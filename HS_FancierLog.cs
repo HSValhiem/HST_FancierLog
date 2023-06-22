@@ -97,15 +97,18 @@ class HS_FancierLog
                     }
                 }
             }
+            LogMessage($"HS Fancier Log v{Version}: {LogPath}", true);
         }
         catch (FileNotFoundException)
         {
             // if Config not Found, Initialize with default settings
             InitConfig();
+            LogMessage($"HS Fancier Log v{Version}: {LogPath}", true);
             LogMessage("No Config Found\nInitializing config with default settings");
         }
         catch (Exception ex)
         {
+            LogMessage($"HS Fancier Log v{Version}: {LogPath}", true);
             LogMessage("Error: " + ex.Message);
         }
     }
@@ -143,9 +146,6 @@ class HS_FancierLog
 
     static void Main()
     {
-        // Header
-        LogMessage($"HS Fancier Log v{Version}: {LogPath}", true);
-
         // Load Config Settings
         LoadConfig();
 
