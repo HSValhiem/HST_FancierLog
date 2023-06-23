@@ -8,7 +8,7 @@ namespace HS_FancierLog;
 class HS_FancierLog
 {
     public static string ConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.txt");
-    public static string Version = "1.0";
+    public static string Version = "1.1";
 
     public static bool SkipValheimCheck;
 
