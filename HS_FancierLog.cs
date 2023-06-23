@@ -1,11 +1,16 @@
 ﻿using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using File = System.IO.File;
+
+namespace HS_FancierLog;
 
 class HS_FancierLog
 {
     public static string ConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.txt");
     public static string Version = "1.0";
+
+    public static bool SkipValheimCheck;
 
     // Set Default Log Path to .\LogOutput.log
     public static string LogPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LogOutput.log");
@@ -33,6 +38,9 @@ class HS_FancierLog
             // Init Log path Setting
             writer.WriteLine(LogPath);
 
+            // Init SkipValheimCheck Setting
+            writer.WriteLine("SkipValheimCheck = " + SkipValheimCheck);
+
             // Init Date Time Format Setting
             writer.WriteLine("DateTimeFormat = " + DateTimeFormat);
             
@@ -57,6 +65,9 @@ class HS_FancierLog
 
             // Get Log Path
             LogPath = fileContent[0].Trim();
+
+            // Get SkipValheimCheck Mode
+            SkipValheimCheck = bool.Parse(fileContent[1].Substring(fileContent[1].IndexOf('=') + 1).Trim());
 
             // Get DateTimeFormat
             string? dateTimeFormatLine = fileContent.FirstOrDefault(line => line.StartsWith("DateTimeFormat"));
@@ -97,20 +108,25 @@ class HS_FancierLog
                     }
                 }
             }
-            LogMessage($"HS Fancier Log v{Version}: {LogPath}", true);
+            DrawHeader();
         }
         catch (FileNotFoundException)
         {
             // if Config not Found, Initialize with default settings
             InitConfig();
-            LogMessage($"HS Fancier Log v{Version}: {LogPath}", true);
+            DrawHeader();
             LogMessage("No Config Found\nInitializing config with default settings");
         }
         catch (Exception ex)
         {
-            LogMessage($"HS Fancier Log v{Version}: {LogPath}", true);
+            DrawHeader();
             LogMessage("Error: " + ex.Message);
         }
+    }
+
+    static void DrawHeader()
+    {
+        LogMessage($"HS Fancier Log v{Version}: {LogPath}", true);
     }
 
     static bool IsValheimRunning()
@@ -149,15 +165,20 @@ class HS_FancierLog
         // Load Config Settings
         LoadConfig();
 
-        if (!IsValheimRunning())
+        if (!SkipValheimCheck && !IsValheimRunning())
         {
             // Clear Old LogFile
             File.WriteAllText(LogPath, string.Empty);
+            Console.Clear();
+            DrawHeader();
+
+            // Wait if Valheim not Started
+            LogMessage("Valheim not Detected\nWaiting for Valheim to start...");
+            while (!IsValheimRunning()) { Thread.Sleep(1); }
         }
 
-        // Wait if Valheim not Started
-        LogMessage("Valheim not Detected\nWaiting for Valheim to start...");
-        while (!IsValheimRunning()) { Thread.Sleep(1); }
+
+        int count = 0;
 
         // Continuously display the log file with color
         using (var stream = new FileStream(LogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -168,30 +189,35 @@ class HS_FancierLog
             while (true)
             {
                 // Detect if Valheim Closed and we need to Clear the Log
-                if (!IsValheimRunning())
+                if (!SkipValheimCheck && !IsValheimRunning())
                 {
+                    if (File.Exists(LogPath)) { File.Delete(LogPath); }
+                    
                     LogMessage("Valheim Close Detected.  Clearing Log.\nWaiting for Valheim to start...");
                     File.WriteAllText(LogPath, string.Empty);
                     while (!IsValheimRunning()) { Thread.Sleep(1); }
                 }
 
+                
+
                 // Check if the file size has changed
                 if (stream.Length < currentPosition)
                 {
-                    // File has been truncated or replaced, reset the current position
                     currentPosition = 0;
+                    Console.Clear();
+                    DrawHeader();
                 }
 
                 // Set the stream position to the current position
                 stream.Position = currentPosition;
 
-                string line;
-
                 // Set BG to Default
                 var bgColor = BackgroundColor;
 
+                string? line;
                 while ((line = reader.ReadLine()) != null)
                 {
+
                     // Setup Colors
                     foreach (var mapping in ColorMappings)
                     {
@@ -208,6 +234,7 @@ class HS_FancierLog
                             break;
                         }
                     }
+
 
                     // Check if mod name or other info exists, to include in the output later.
                     string pattern = "(?<=:)[^\\]]+(?=\\])";
